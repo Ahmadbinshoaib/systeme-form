@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadership Self-Assessment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
+        <!-- Email Input Screen -->
+        <div id="email-screen" class="space-y-4">
+            <h1 class="text-2xl font-bold text-center text-gray-800">Leadership Self-Assessment</h1>
+            <p class="text-gray-600 text-center">Enter your email to receive your scoring report.</p>
+            <input type="email" id="email-input" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your email address" required>
+            <button id="start-button" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Start Assessment</button>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="hidden space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800" id="question-text"></h2>
+            <div id="options" class="space-y-2"></div>
+            <p class="text-sm text-gray-600">Question <span id="question-number">1</span> of 10</p>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="result-screen" class="hidden space-y-4">
+            <h2 class="text-2xl font-bold text-center text-gray-800">Your Leadership Style</h2>
+            <p id="result-title" class="text-xl font-semibold text-blue-600"></p>
+            <p id="result-score" class="text-gray-700"></p>
+            <p id="result-description" class="text-gray-700"></p>
+            <p id="result-strengths" class="text-gray-700"></p>
+            <p id="result-improvements" class="text-gray-700"></p>
+            <p id="result-tips" class="text-gray-700"></p>
+            <p class="text-gray-600">Your results have been sent to your email.</p>
+            <p class="text-gray-600">Learn more about Authentic Leadership, go to <a href="http://hanshorlings.com" class="text-blue-500 hover:underline">hanshorlings.com</a> to download relevant resources or join the Authentic Leadership Retreat - the roadmap to authentic leadership.</p>
+            <button id="download-pdf-button" class="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600">Download Results as PDF</button>
+            <button id="restart-button" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Restart Assessment</button>
+        </div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        const questions = [
+            {
+                text: "How do you involve your team in decision-making?",
+                options: [
+                    { text: "I make all key decisions and inform the team afterward.", score: 1 },
+                    { text: "I sometimes ask for input but ultimately make the decision myself.", score: 2 },
+                    { text: "I involve the team in discussions but reserve the final say.", score: 3 },
+                    { text: "I actively seek team input and often let them influence the decision.", score: 4 },
+                    { text: "I empower the team to decide collaboratively, I facilitate.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you manage challenges to your decisions?",
+                options: [
+                    { text: "I expect the team to follow my decision without question.", score: 1 },
+                    { text: "I listen briefly but reinforce my decision if challenged.", score: 2 },
+                    { text: "I consider the challenge and may adjust if it makes sense.", score: 3 },
+                    { text: "I encourage open discussion, revise decisions based on feedback.", score: 4 },
+                    { text: "I view challenges as opportunities for growth.", score: 5 }
+                ]
+            },
+            {
+                text: "What motivates your team to perform well?",
+                options: [
+                    { text: "Rewards like bonuses or fear of consequences (e.g., demotion).", score: 1 },
+                    { text: "A mix of rewards and recognition for good performance.", score: 2 },
+                    { text: "Clear tasks, goals and a sense of accountability.", score: 3 },
+                    { text: "Shared purpose and alignment with personal values.", score: 4 },
+                    { text: "Intrinsic motivation through purpose, autonomy, and mastery.", score: 5 }
+                ]
+            },
+            {
+                text: "How transparent are you about your thought process?",
+                options: [
+                    { text: "I keep my reasoning private to maintain control.", score: 1 },
+                    { text: "I share some details to avoid confusion.", score: 2 },
+                    { text: "I explain my decisions when asked but don’t volunteer much.", score: 3 },
+                    { text: "I regularly share my thought process to build understanding.", score: 4 },
+                    { text: "I am fully transparent, also share my doubts and vulnerabilities.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you respond to mistakes within your team?",
+                options: [
+                    { text: "I correct the mistake and ensure it doesn’t happen again.", score: 1 },
+                    { text: "I address the mistake privately and focus on correction.", score: 2 },
+                    { text: "I discuss the mistake and how to avoid it in the future.", score: 3 },
+                    { text: "I encourage the individual to reflect and propose their own solution.", score: 4 },
+                    { text: "I use mistakes as learning opportunities for growth of the team.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you balance long-term vs. short-term results?",
+                options: [
+                    { text: "I focus mainly on immediate outcomes and efficiency.", score: 1 },
+                    { text: "I balance short-term wins with some long-term planning.", score: 2 },
+                    { text: "I set long-term goals but often get pulled into short-term issues.", score: 3 },
+                    { text: "I prioritize sustainable growth and employee development.", score: 4 },
+                    { text: "I focus on long-term vision, even if it delays short-term gains.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you communicate with your team?",
+                options: [
+                    { text: "I give clear instructions and expect them to be followed.", score: 1 },
+                    { text: "I provide guidance but limit feedback to formal channels.", score: 2 },
+                    { text: "I encourage questions but mostly communicate top-down.", score: 3 },
+                    { text: "I foster open dialogue and regularly seek team input.", score: 4 },
+                    { text: "I prioritize two-way communication, active listening and adapting.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you handle feedback from your team?",
+                options: [
+                    { text: "I view feedback as a challenge to my authority.", score: 1 },
+                    { text: "I accept feedback but don’t often act on it.", score: 2 },
+                    { text: "I listen to feedback and consider it when convenient.", score: 3 },
+                    { text: "I actively seek feedback and use it to improve.", score: 4 },
+                    { text: "I create a constant feedback culture, value and act upon it.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you empower your team members?",
+                options: [
+                    { text: "I closely supervise and control their actions to ensure quality.", score: 1 },
+                    { text: "I give limited autonomy but check in frequently.", score: 2 },
+                    { text: "I delegate tasks but retain decision-making authority.", score: 3 },
+                    { text: "I encourage initiative and provide support when needed.", score: 4 },
+                    { text: "I fully empower the team to make decisions and take ownership.", score: 5 }
+                ]
+            },
+            {
+                text: "How do you approach leadership development?",
+                options: [
+                    { text: "I focus on maintaining my own authority and control.", score: 1 },
+                    { text: "I develop leaders who can follow my directives effectively.", score: 2 },
+                    { text: "I mentor a few key individuals to take on more responsibility.", score: 3 },
+                    { text: "I invest in developing leaders with a focus on empowerment.", score: 4 },
+                    { text: "I build a pipeline of authentic leaders who inspire others.", score: 5 }
+                ]
+            }
+        ];
+
+        const results = {
+            "Command and Control Leader": {
+                range: "10-25",
+                description: "You lead with authority, relying on control and extrinsic motivators (e.g., rewards, consequences). This style can deliver short-term efficiency but may limit creativity and morale.",
+                strengths: "You excel in structured settings and can achieve quick results.",
+                improvements: "In an time of major changes and disruption (e.g. artificial intelligence, agents, robots), your approach may hinder adaptability and team engagement. Modern challenges require flexibility, team communication, feedback and collaboration, which are silenced by rigid control.",
+                tips: [
+                    "Experiment with involving your team in small decisions to build trust.",
+                    "Reflect on your core values and how they align with your actions—authenticity begins here.",
+                    "Encourage open communication to unlock your team’s innovative potential."
+                ]
+            },
+            "Transitional Leader": {
+                range: "26-35",
+                description: "You’re shifting away from command and control, incorporating some authentic traits like seeking input. However, you still lean on traditional methods at times.",
+                strengths: "You balance efficiency with growing team involvement.",
+                improvements: "To lead effectively in a time of rapid change, fully embrace empowerment and intrinsic motivation. Half-measures may limit your team’s ability to innovate with tools like artificial intelligence.",
+                tips: [
+                    "Share your decision-making process more openly to build trust.",
+                    "Delegate more responsibility and resist micromanaging.",
+                    "Focus on long-term vision over short-term wins to foster sustainable growth."
+                ]
+            },
+            "Emerging Authentic Leader": {
+                range: "36-44",
+                description: "You display many authentic leadership qualities—transparency, empowerment—but may revert to control in certain situations, preventing full consistency.",
+                strengths: "Your team likely trusts you and feels motivated, creating a foundation for innovation.",
+                improvements: "In today’s fast-evolving landscape, even occasional control can limit adaptability. Consistency in authentic behaviors is key to thriving amid change like artificial intelligence, ai-agents and robots.",
+                tips: [
+                    "Deepen self-awareness by reflecting on why you revert to control.",
+                    "Commit to two-way communication, especially under pressure.",
+                    "Lead by example: embrace new technologies and encourage your team to follow."
+                ]
+            },
+            "Authentic Leader": {
+                range: "45-50",
+                description: "You consistently embody authentic leadership, inspiring trust and intrinsic motivation. Your style aligns well with the demands of innovation and change.",
+                strengths: "Your team is empowered and adaptable, ready to tackle challenges like artificial intelligence, ai-agents and robots with creativity.",
+                improvements: "Even at this level, staying ahead requires ongoing growth. Complacency could hinder your ability to lead in an ever-changing world.",
+                tips: [
+                    "Stay curious about emerging trends and model lifelong learning.",
+                    "Foster continuous feedback to keep trust and innovation thriving.",
+                    "Mentor others to build a legacy of authentic leadership."
+                ]
+            }
+        };
+
+        let email = "";
+        let currentQuestionIndex = 0;
+        let answers = new Array(questions.length).fill(null);
+        let shuffledQuestions = [];
+        const emailScreen = document.getElementById("email-screen");
+        const questionScreen = document.getElementById("question-screen");
+        const resultScreen = document.getElementById("result-screen");
+        const startButton = document.getElementById("start-button");
+        const downloadPdfButton = document.getElementById("download-pdf-button");
+        const restartButton = document.getElementById("restart-button");
+
+        // Shuffle array function
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Initialize assessment
+        function initAssessment() {
+            shuffledQuestions = shuffle([...questions]);
+            currentQuestionIndex = 0;
+            answers = new Array(questions.length).fill(null);
+            showQuestion();
+        }
+
+        // Show question
+        function showQuestion() {
+            const question = shuffledQuestions[currentQuestionIndex];
+            document.getElementById("question-text").textContent = question.text;
+            document.getElementById("question-number").textContent = currentQuestionIndex + 1;
+
+            // Shuffle options but keep labels a-e
+            const shuffledOptions = shuffle([...question.options]);
+            const optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = "";
+            shuffledOptions.forEach((option, index) => {
+                const label = String.fromCharCode(97 + index); // a, b, c, d, e
+                const div = document.createElement("div");
+                div.className = "flex items-start";
+                div.innerHTML = `
+                    <input type="radio" name="option" value="${option.score}" id="option-${index}" class="mt-1 mr-2 focus:ring-blue-500">
+                    <label for="option-${index}" class="text-gray-700">${label}. ${option.text}</label>
+                `;
+                optionsContainer.appendChild(div);
+                // Add onchange event to auto-proceed
+                document.getElementById(`option-${index}`).addEventListener("change", () => {
+                    saveAnswer();
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questions.length) {
+                        showQuestion();
+                    } else {
+                        showResults();
+                    }
+                });
+            });
+
+            // Check if an answer was previously selected (shouldn't happen with auto-proceed)
+            if (answers[currentQuestionIndex] !== null) {
+                const radio = document.querySelector(`input[value="${answers[currentQuestionIndex]}"]`);
+                if (radio) radio.checked = true;
+            }
+        }
+
+        // Save answer
+        function saveAnswer() {
+            const selected = document.querySelector('input[name="option"]:checked');
+            if (selected) {
+                answers[currentQuestionIndex] = parseInt(selected.value);
+            }
+        }
+
+        // Calculate score and show results
+        function showResults() {
+            const totalScore = answers.reduce((sum, score) => sum + (score || 0), 0);
+            let resultKey = "";
+            if (totalScore >= 45) resultKey = "Authentic Leader";
+            else if (totalScore >= 36) resultKey = "Emerging Authentic Leader";
+            else if (totalScore >= 26) resultKey = "Transitional Leader";
+            else resultKey = "Command and Control Leader";
+
+            const result = results[resultKey];
+            document.getElementById("result-title").textContent = resultKey;
+            document.getElementById("result-score").textContent = `Your Score: ${totalScore} (${result.range})`;
+            document.getElementById("result-description").textContent = `Description: ${result.description}`;
+            document.getElementById("result-strengths").textContent = `Strengths: ${result.strengths}`;
+            document.getElementById("result-improvements").textContent = `What to Work On: ${result.improvements}`;
+            document.getElementById("result-tips").textContent = `Improvement Tips: ${result.tips.join(" ")}`;
+
+            // Simulate sending email (replace with actual systeme.io API call)
+            console.log(`Sending results to ${email}: Score ${totalScore}, Style: ${resultKey}`);
+
+            questionScreen.classList.add("hidden");
+            resultScreen.classList.remove("hidden");
+        }
+
+        // Download results as PDF
+        function downloadPDF() {
+            const resultTitle = document.getElementById("result-title").textContent;
+            const resultScore = document.getElementById("result-score").textContent;
+            const resultDescription = document.getElementById("result-description").textContent.replace("Description: ", "");
+            const resultStrengths = document.getElementById("result-strengths").textContent.replace("Strengths: ", "");
+            const resultImprovements = document.getElementById("result-improvements").textContent.replace("What to Work On: ", "");
+            const resultTips = document.getElementById("result-tips").textContent.replace("Improvement Tips: ", "");
+
+            // Generating LaTeX content with centered title, bold headings, and adjusted spacing
+            const latexContent = `
+\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage{geometry}
+\\geometry{a4paper, margin=0.75in}
+\\usepackage[parfill]{parskip}
+\\setlength{\\parskip}{2pt}
+\\usepackage{enumitem}
+
+\\begin{document}
+
+\\begin{center}
+\\section*{\\textbf{Leadership Self-Assessment Results}}
+\\end{center}
+\\vspace{10pt}
+
+\\subsection*{\\textbf{Leadership Style}}
+${resultTitle}
+
+\\subsection*{\\textbf{Score}}
+\\vspace{10pt}
+${resultScore}
+
+\\subsection*{\\textbf{Description}}
+\\vspace{10pt}
+${resultDescription}
+
+\\subsection*{\\textbf{Strengths}}
+\\vspace{-5pt}
+${resultStrengths}
+
+\\subsection*{\\textbf{What to Work On}}
+\\vspace{-5pt}
+${resultImprovements}
+
+\\subsection*{\\textbf{Improvement Tips}}
+\\vspace{-5pt}
+\\begin{itemize}
+${results[resultTitle].tips.map(tip => `  \\item ${tip.replace(/([{}%&$#])/g, "\\$1")}`).join("\n")}
+\\end{itemize}
+
+\\end{document}
+`;
+
+            // Using jsPDF to create a downloadable PDF with centered title and adjusted spacing
+            const doc = new jsPDF();
+            let y = 15;
+
+            // Section: Leadership Self-Assessment Results (centered)
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Leadership Self-Assessment Results", doc.internal.pageSize.getWidth() / 2, y, { align: "center" });
+            y += 10;
+
+            // Subsection: Leadership Style
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Leadership Style", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(doc.splitTextToSize(resultTitle, 170), 20, y);
+            y += 5;
+
+            // Subsection: Score
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            y += 10; // One blank line before Score
+            doc.text("Score", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(doc.splitTextToSize(resultScore, 170), 20, y);
+            y += 5;
+
+            // Subsection: Description
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            y += 10; // One blank line before Description
+            doc.text("Description", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const descriptionLines = doc.splitTextToSize(resultDescription, 170);
+            doc.text(descriptionLines, 20, y);
+            y += descriptionLines.length * 5 + 5;
+
+            // Subsection: Strengths
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Strengths", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const strengthsLines = doc.splitTextToSize(resultStrengths, 170);
+            doc.text(strengthsLines, 20, y);
+            y += strengthsLines.length * 5 + 5;
+
+            // Subsection: What to Work On
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("What to Work On", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const improvementsLines = doc.splitTextToSize(resultImprovements, 170);
+            doc.text(improvementsLines, 20, y);
+            y += improvementsLines.length * 5 + 5;
+
+            // Subsection: Improvement Tips
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Improvement Tips", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            results[resultTitle].tips.forEach((tip, index) => {
+                doc.text(`- ${tip}`, 20, y);
+                y += 8;
+			})
+			
+			// Subsection: Footer
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("Learn more about Authentic Leadership.", 20, y);
+            y += 5;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(doc.splitTextToSize("Go to Hanshorlings.com to download relevant resources or join the Authentic Leadership Retreat - the roadmap to authentic leadership.", 170), 20, y);
+            y += 5;
+            ;
+
+            doc.save("Leadership_Self_Assessment_Results.pdf");
+        }
+
+        // Event listeners
+        startButton.addEventListener("click", () => {
+            email = document.getElementById("email-input").value;
+            if (!email) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+            emailScreen.classList.add("hidden");
+            questionScreen.classList.remove("hidden");
+            initAssessment();
+        });
+
+        downloadPdfButton.addEventListener("click", downloadPDF);
+
+        restartButton.addEventListener("click", () => {
+            resultScreen.classList.add("hidden");
+            emailScreen.classList.remove("hidden");
+            document.getElementById("email-input").value = "";
+        });
+    </script>
+</body>
+</html>
